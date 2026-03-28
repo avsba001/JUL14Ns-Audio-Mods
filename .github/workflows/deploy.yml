@@ -3,12 +3,12 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main
+      - '**'
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
   pull_request:
     branches:
-      - main
+      - '**'
   workflow_dispatch:
 
 env:
@@ -21,12 +21,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set Variables
-        # Version is the tag name without the v, fallback to a CI dev version for non-tag builds
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
+            VERSION="$(echo ${GITHUB_REF#refs/tags/v})"
           else
-            VERSION="0.0.0-ci"
+            VERSION="0.0.0-dev"
           fi
           sed -i "s/<version>/${VERSION}/g" deploy/package.ini
           sed -i "s/<version>/${VERSION}/g" src/definitions.hpp
@@ -45,9 +44,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2019
+          - os: windows-2022
             arch: x64
-          - os: windows-2019
+          - os: windows-2022
             arch: x86
           - os: ubuntu-latest
             arch: x64
@@ -67,17 +66,16 @@ jobs:
           path: .
       - name: Setup MSVC (Windows only)
         uses: ilammy/msvc-dev-cmd@v1
-        if: matrix.os == 'windows-2019'
+        if: startsWith(matrix.os, 'windows-')
         with:
           arch: ${{ matrix.arch }}
-          toolset: 14.0
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
           version: '5.15.2'
           target: 'desktop'
           modules: 'qtcharts'
-          arch: ${{ matrix.os == 'windows-2019' && (matrix.arch == 'x64' && 'win64_msvc2019_64' || 'win32_msvc2019' ) || (matrix.os == 'ubuntu-latest' && 'gcc_64' || 'clang_64') }}
+          arch: ${{ startsWith(matrix.os, 'windows-') && (matrix.arch == 'x64' && 'win64_msvc2019_64' || 'win32_msvc2019' ) || (matrix.os == 'ubuntu-latest' && 'gcc_64' || 'clang_64') }}
           dir: '${{ github.workspace }}'
           cache: true
           cache-key-prefix: ${{ runner.os }}-${{ matrix.arch }}-Qt
@@ -85,10 +83,10 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.14
       - name: Build
         run: |
-          cmake ${{matrix.os == 'windows-2019' && '-A' || ''}} ${{matrix.os == 'windows-2019' && (matrix.arch == 'x64' && 'x64' || 'Win32') || '' }} .
+          cmake ${{startsWith(matrix.os, 'windows-') && '-A' || ''}} ${{startsWith(matrix.os, 'windows-') && (matrix.arch == 'x64' && 'x64' || 'Win32') || '' }} .
           cmake --build . --config Release
       - name: Rename release (Windows)
-        if: matrix.os == 'windows-2019'
+        if: startsWith(matrix.os, 'windows-')
         run: |
           mv Release/${{ env.PLUGIN_NAME }}.dll ${{ env.PLUGIN_NAME }}_win${{ matrix.arch == 'x64' && '64' || '32' }}.dll
       - name: Rename release (Linux)
