@@ -66,7 +66,7 @@ jobs:
           name: prebuild
           path: .
       - name: Setup MSVC (Windows only)
-        uses: ilammy/msvc-dev-cmd@v2
+        uses: ilammy/msvc-dev-cmd@v1
         if: startsWith(matrix.os, 'windows-')
         with:
           arch: ${{ matrix.arch }}
