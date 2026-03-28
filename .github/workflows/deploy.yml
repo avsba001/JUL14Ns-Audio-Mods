@@ -26,7 +26,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION="$(echo ${GITHUB_REF#refs/tags/v})"
           else
-            VERSION="0.0.0-dev"
+            VERSION="0.0.${GITHUB_RUN_NUMBER}"
           fi
           sed -i "s/<version>/${VERSION}/g" deploy/package.ini
           sed -i "s/<version>/${VERSION}/g" src/definitions.hpp
@@ -147,7 +147,7 @@ jobs:
         working-directory: deploy
       - name: Generate release tag
         run: |
-          TAG="v0.0.2-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          TAG="v0.0.0-auto-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           echo "RELEASE_TAG=${TAG}" >> $GITHUB_ENV
 
       - name: Rename release
