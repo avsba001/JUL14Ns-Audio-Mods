@@ -55,6 +55,7 @@ int vadRolloff( 0 );
 RingBuffer<float> txLUFSAdjustment( ADJUSTMENT_BUF );
 Compressor compressor( 0.010f, 0.200f );
 RingBuffer<float> vadProbOverTime( 50 );
+FixedSizeMap<int, LufsMeter*>* txLufsPerChannel;
 
 ChannelMap* rxStatePerChannel;
 SchidClientIdMap* rxStatePerChannelPerUser;
@@ -70,6 +71,7 @@ int ts3plugin_init() {
 	configObject = new Config(QString::fromUtf8(configPath) + CONFIG_FILE);
 	visualizeWindow = new Visualize();
 	txStatePerChannel = new ChannelMap(MAX_RX_CHANNEL);
+	txLufsPerChannel = new FixedSizeMap<int, LufsMeter*>(MAX_RX_CHANNEL);
 	rxStatePerChannel = new ChannelMap(MAX_RX_CHANNEL);
 	rxStatePerChannelPerUser = new SchidClientIdMap(MAX_STREAM_FILTER);
 
@@ -312,6 +314,19 @@ void ts3plugin_onEditCapturedVoiceDataEvent(uint64 serverConnectionHandlerID, sh
 		visualizeWindow->addLufsData(loudness);
 		visualizeWindow->addAgcData(adjustment);
 		visualizeWindow->addLufsAgcData(adjustedLoudness);
+	}
+	else if (visualizeWindow->isVisible()) {
+		float loudness = 0;
+		for (int i = 0; i < 480; i++) {
+			for (int chan = 0; chan < channels; chan++) {
+				LufsMeter* lm = txLufsPerChannel->get_or_init(chan, [] {return new LufsMeter(); });
+				loudness += std::fmax(-69.0f, lm->calculate_lufs(samples[chan + channels * i]));
+			}
+		}
+		loudness /= sampleCount;
+		visualizeWindow->addLufsData(loudness);
+		visualizeWindow->addAgcData(1.0f);
+		visualizeWindow->addLufsAgcData(loudness);
 	}
 
 	if (vad) {
