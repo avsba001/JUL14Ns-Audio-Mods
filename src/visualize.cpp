@@ -34,7 +34,6 @@ void Visualize::showEvent(QShowEvent*)
 void Visualize::addAgcData(double data)
 {
 	if (!isVisible()) return;
-	if (m_ui->tabWidget->currentIndex() != 0) return;
 	double key = time.elapsed() / 1000.0;
 	m_ui->agcPlot->addDataPoint(key, data);
 }
@@ -42,7 +41,6 @@ void Visualize::addAgcData(double data)
 void Visualize::addLufsData(double data)
 {
 	if (!isVisible()) return;
-	if (m_ui->tabWidget->currentIndex() != 1) return;
 	double key = time.elapsed() / 1000.0;
 	m_ui->lufsPlot->addDataPoint(key, data);
 }
@@ -50,7 +48,6 @@ void Visualize::addLufsData(double data)
 void Visualize::addLufsAgcData(double data)
 {
 	if (!isVisible()) return;
-	if (m_ui->tabWidget->currentIndex() != 2) return;
 	double key = time.elapsed() / 1000.0;
 	m_ui->lufsAgcPlot->addDataPoint(key, data);
 }
